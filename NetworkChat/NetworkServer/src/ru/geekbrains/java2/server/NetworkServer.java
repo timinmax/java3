@@ -7,6 +7,10 @@ import ru.geekbrains.java2.server.client.ClientHandler;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.*;
 
 public class NetworkServer {
@@ -18,6 +22,7 @@ public class NetworkServer {
     private static final int LOGIN_TIMEOUT = 120;
     private final AuthService authService;
     private Thread thCheckAuthTimeout;
+    private static Connection dbConnection = null;
 
     public NetworkServer(int port) {
         this.port = port;
@@ -25,6 +30,25 @@ public class NetworkServer {
         this.thCheckAuthTimeout = new Thread(() -> this.checkAuthTimeout());
         this.thCheckAuthTimeout.setDaemon(true);
 
+
+
+    }
+
+    private static void connect2DB(){
+        if (dbConnection==null){
+            try {
+                dbConnection = MySqlConEx.getMySQLConnection();//MySqlConEx.getMySQLConnection;
+            } catch (SQLException e) {
+                e.printStackTrace();
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public static Connection getDbConnection(){
+        connect2DB();
+        return dbConnection;
     }
 
     public void start() {
@@ -43,6 +67,11 @@ public class NetworkServer {
             e.printStackTrace();
         } finally {
             authService.stop();
+            try {
+                dbConnection.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -91,15 +120,60 @@ public class NetworkServer {
             }
         }
     }
+
+    public void sendUserList(ClientHandler clientHandler) throws IOException, SQLException {
+        String uList = "/ulist " + getUlist();
+        if (clientHandler!=null) {
+            clientHandler.sendMessage(uList);
+        }else {
+            broadcastMessage(uList,null);
+        }
+    }
+
     public synchronized void subscribe(ClientHandler clientHandler) {
         clients.add(clientHandler);
         authTimeout.remove(clientHandler);
+        try {
+            sendUserList(null);
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     public synchronized void unsubscribe(ClientHandler clientHandler) {
         clients.remove(clientHandler);
         authTimeout.remove(clientHandler);
+        try {
+            sendUserList(null);
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
 
+    public String getUlist() throws SQLException {
+        String ulist = "@@@All/on";
+        Connection conn = NetworkServer.getDbConnection();
+        PreparedStatement stmt = conn.prepareStatement("SELECT DISTINCT nickname FROM users");
+        ResultSet rs = stmt.executeQuery();
+
+        while (rs.next()){
+            String nickname = rs.getString("nickname");
+            ulist += "@@@" + nickname + ((userIsOnline(nickname))?"/on":"/off");
+        }
+        return ulist.trim();
+    }
+
+    public boolean userIsOnline(String nickname){
+        for (ClientHandler client : clients) {
+            if (client.getNickname().toLowerCase().trim().equals(nickname.toLowerCase().trim())) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

@@ -38,7 +38,7 @@
                   </grid>
                 </constraints>
                 <properties>
-                  <margin top="3" left="8" bottom="3" right="8"/>
+                  <margin top="2" left="5" bottom="2" right="5"/>
                 </properties>
               </component>
               <component id="af4d2" class="javax.swing.JButton" binding="sendButton" default-binding="true">

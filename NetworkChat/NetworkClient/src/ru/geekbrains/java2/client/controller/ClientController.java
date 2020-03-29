@@ -6,6 +6,7 @@ import ru.geekbrains.java2.client.model.NetworkService;
 
 import javax.swing.*;
 import java.io.IOException;
+import java.util.HashMap;
 
 public class ClientController {
 
@@ -37,11 +38,13 @@ public class ClientController {
     private void openChat() {
         authDialog.dispose();
         networkService.setMessageHandler(clientChat::appendMessage);
+        networkService.setRefreshListHandler(clientChat::refreshContactList);
         clientChat.setVisible(true);
     }
 
     private void setUserName(String nickname) {
         this.nickname = nickname;
+        clientChat.setTitle(nickname);
     }
 
     private void connectToServer() throws IOException {

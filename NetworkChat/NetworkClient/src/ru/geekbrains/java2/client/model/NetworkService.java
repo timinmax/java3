@@ -6,6 +6,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.util.HashMap;
 import java.util.function.Consumer;
 
 public class NetworkService {
@@ -17,6 +18,7 @@ public class NetworkService {
     private DataOutputStream out;
 
     private Consumer<String> messageHandler;
+    private Consumer<HashMap> refreshListHandler;
     private AuthEvent successfulAuthEvent;
     private String nickname;
 
@@ -41,6 +43,17 @@ public class NetworkService {
                         String[] messageParts = message.split("\\s+", 2);
                         nickname = messageParts[1];
                         successfulAuthEvent.authIsSuccessful(nickname);
+                    }else if(message.startsWith("/ulist")){
+
+                        String[] messageParts = message.split("@@@");
+                        HashMap<String,Boolean> userList = new HashMap<>();
+                        for (int i = 1;i<messageParts.length;i++){
+                            String[] usrRec = messageParts[i].split("/");
+                            System.out.println(messageParts[i]);
+                            userList.put(usrRec[0],"on".equals(usrRec[1]));
+                        }
+                        refreshListHandler.accept(userList);
+
                     }
                     else if (messageHandler != null) {
                         messageHandler.accept(message);
@@ -63,6 +76,10 @@ public class NetworkService {
 
     public void setMessageHandler(Consumer<String> messageHandler) {
         this.messageHandler = messageHandler;
+    }
+
+    public void setRefreshListHandler(Consumer<HashMap> refreshListHandler) {
+        this.refreshListHandler = refreshListHandler;
     }
 
     public void setSuccessfulAuthEvent(AuthEvent successfulAuthEvent) {

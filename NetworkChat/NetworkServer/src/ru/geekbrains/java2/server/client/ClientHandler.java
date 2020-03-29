@@ -6,6 +6,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.sql.SQLException;
 
 public class ClientHandler {
 
@@ -41,7 +42,9 @@ public class ClientHandler {
                     readMessages();
                 } catch (IOException e) {
                     System.out.println("Соединение с клиентом " + nickname + " было закрыто!");
-                } finally {
+                } catch (SQLException e){
+                    e.printStackTrace();
+                }finally {
                     closeConnection();
                 }
             }).start();
@@ -60,23 +63,26 @@ public class ClientHandler {
         }
     }
 
-    private void readMessages() throws IOException {
+    private void readMessages() throws IOException, SQLException {
         while (true) {
-            String message = in.readUTF();
+            String message = in.readUTF().toLowerCase();
             System.out.printf("От %s: %s%n", nickname, message);
             if ("/end".equals(message)) {
                 return;
-            }
-            if (message.toLowerCase().startsWith("/w")) {
+            }else if (message.startsWith("/w")) {
                 String[] messageParts = message.split("\\s+", 3);
                 String recieverNickname = messageParts[1];
                 String messageText = nickname + ": " + messageParts[2];
                 networkServer.personalMessage(recieverNickname, messageText);
-            }else {
+            }else if(message.startsWith("/ulist")){
+                networkServer.sendUserList(this);
+            }else{
                 networkServer.broadcastMessage(nickname + ": " + message, this);
             }
         }
     }
+
+
 
     private void authentication() throws IOException {
         while (true) {
