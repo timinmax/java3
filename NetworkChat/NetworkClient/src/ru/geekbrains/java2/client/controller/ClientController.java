@@ -39,6 +39,7 @@ public class ClientController {
         authDialog.dispose();
         networkService.setMessageHandler(clientChat::appendMessage);
         networkService.setRefreshListHandler(clientChat::refreshContactList);
+        networkService.setRefreshNicknameHandler(this::setUserName);
         clientChat.setVisible(true);
     }
 
@@ -58,6 +59,10 @@ public class ClientController {
 
     public void sendAuthMessage(String login, String pass) throws IOException {
         networkService.sendAuthMessage(login, pass);
+    }
+
+    public void sendNewNickMessage(String newNickName) throws IOException {
+        networkService.sendChangeNicknameMessage(newNickName);
     }
 
     public void sendMessage(String message) {

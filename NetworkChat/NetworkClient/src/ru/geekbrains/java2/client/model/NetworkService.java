@@ -19,6 +19,10 @@ public class NetworkService {
 
     private Consumer<String> messageHandler;
     private Consumer<HashMap> refreshListHandler;
+
+
+
+    private Consumer<String> refreshNicknameHandler;
     private AuthEvent successfulAuthEvent;
     private String nickname;
 
@@ -53,7 +57,10 @@ public class NetworkService {
                             userList.put(usrRec[0],"on".equals(usrRec[1]));
                         }
                         refreshListHandler.accept(userList);
-
+                    }else if(message.startsWith("/newnick")){
+                        String[] messageParts = message.split("\\s+", 2);
+                        nickname = messageParts[1];
+                        refreshNicknameHandler.accept(nickname);
                     }
                     else if (messageHandler != null) {
                         messageHandler.accept(message);
@@ -70,6 +77,10 @@ public class NetworkService {
         out.writeUTF(String.format("/auth %s %s", login, password));
     }
 
+    public void sendChangeNicknameMessage(String newNickname) throws IOException {
+        out.writeUTF(String.format("/chnick %s",newNickname));
+    }
+
     public void sendMessage(String message) throws IOException {
         out.writeUTF(message);
     }
@@ -81,7 +92,9 @@ public class NetworkService {
     public void setRefreshListHandler(Consumer<HashMap> refreshListHandler) {
         this.refreshListHandler = refreshListHandler;
     }
-
+    public void setRefreshNicknameHandler(Consumer<String> refreshNicknameHandler) {
+        this.refreshNicknameHandler = refreshNicknameHandler;
+    }
     public void setSuccessfulAuthEvent(AuthEvent successfulAuthEvent) {
         this.successfulAuthEvent = successfulAuthEvent;
     }

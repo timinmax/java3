@@ -168,6 +168,38 @@ public class NetworkServer {
         return ulist.trim();
     }
 
+    public boolean changeNickName(String currentNickname, String newNickname){
+        try {
+            if (nicknameExists(newNickname)) return false;
+            Connection conn = NetworkServer.getDbConnection();
+            PreparedStatement stmt = conn.prepareStatement("UPDATE `gbchat`.`users` SET `nickname` = ? WHERE (`nickname` = ?);");
+            stmt.setString(1,newNickname);
+            stmt.setString(2,currentNickname);
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+        try {
+            sendUserList(null);
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return true;
+    }
+
+    private boolean nicknameExists(String nickname) throws SQLException{
+        Connection conn = NetworkServer.getDbConnection();
+        PreparedStatement stmt = conn.prepareStatement("SELECT DISTINCT  nickname FROM users where nickname=? limit 1");
+        stmt.setString(1,nickname);
+        ResultSet rs = stmt.executeQuery();
+
+        return rs.next();
+
+    }
+
     public boolean userIsOnline(String nickname){
         for (ClientHandler client : clients) {
             if (client.getNickname().toLowerCase().trim().equals(nickname.toLowerCase().trim())) {

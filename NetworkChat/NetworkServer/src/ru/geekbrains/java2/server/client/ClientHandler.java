@@ -76,7 +76,18 @@ public class ClientHandler {
                 networkServer.personalMessage(recieverNickname, messageText);
             }else if(message.startsWith("/ulist")){
                 networkServer.sendUserList(this);
+            }else if(message.startsWith("/chnick")){
+                String[] messageParts = message.split("\\s+", 2);
+                String newNickname = messageParts[1];
+                if (networkServer.changeNickName(nickname,newNickname)){
+
+                    networkServer.broadcastMessage(nickname + " переименовался в " + newNickname, this);
+                    this.nickname = newNickname;
+                    sendMessage("/newnick " + this.nickname);
+                    networkServer.sendUserList(null);
+                }
             }else{
+
                 networkServer.broadcastMessage(nickname + ": " + message, this);
             }
         }
