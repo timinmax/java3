@@ -15,6 +15,8 @@ public class ClientChat extends JFrame {
     private JButton sendButton;
     private JTextArea chatText;
     private JButton changeLoginButton;
+    private JButton addFilterButton;
+    private JButton removeFilterButton;
     private DefaultListModel<String> userListModel = new DefaultListModel<>();
 
     private ClientController controller;
@@ -39,6 +41,8 @@ public class ClientChat extends JFrame {
        private void addListeners() {
         sendButton.addActionListener(e -> ClientChat.this.sendMessage());
         changeLoginButton.addActionListener(e -> ClientChat.this.changeLogin());
+        addFilterButton.addActionListener(e -> ClientChat.this.addFilter());
+        removeFilterButton.addActionListener(e -> ClientChat.this.removeFilter());
         messageTextField.addActionListener(e -> sendMessage());
         usersList.addKeyListener(new KeyAdapter() {
             @Override
@@ -85,6 +89,44 @@ public class ClientChat extends JFrame {
         controller.sendMessage(selected,message);
         messageTextField.setText(null);
         showMessages();
+    }
+
+    private void addFilter(){
+        while (true){
+            String wordToAdd = JOptionPane.showInputDialog(mainPanel,"Add word to filter");
+            if (wordToAdd == null){
+                break;
+            }
+
+            if (!"".equals(wordToAdd.trim())){
+                try {
+                    controller.sendAddWordToFilter(wordToAdd.trim());
+                } catch (IOException e) {
+                    JOptionPane.showMessageDialog(mainPanel, "Ошибка при попытке добавить слово в матофильтр");
+                }finally {
+                    break;
+                }
+            }
+        }
+    }
+
+    private void removeFilter(){
+        while (true){
+            String wordToRemove = JOptionPane.showInputDialog(mainPanel,"Remove word from filter");
+            if (wordToRemove == null){
+                break;
+            }
+
+            if (!"".equals(wordToRemove.trim())){
+                try {
+                    controller.removeWordFromFilter(wordToRemove.trim());
+                } catch (IOException e) {
+                    JOptionPane.showMessageDialog(mainPanel, "Ошибка при попытке удалить слово из матофильтра");
+                }finally {
+                    break;
+                }
+            }
+        }
     }
 
     private void changeLogin(){

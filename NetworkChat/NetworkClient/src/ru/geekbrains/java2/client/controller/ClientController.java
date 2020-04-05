@@ -84,6 +84,13 @@ public class ClientController {
         networkService.sendChangeNicknameMessage(newNickName);
     }
 
+    public void sendAddWordToFilter(String wordToAdd) throws IOException {
+        networkService.sendAddWordToFilterMessage(wordToAdd);
+    }
+    public void removeWordFromFilter(String wordToRemove) throws IOException {
+        networkService.sendRemoveWordFromFilterMessage(wordToRemove);
+    }
+
     public void sendMessage(String reciever, String message) {
         chatLogger.appendMessage(reciever,nickname + ": " + message);
         try {

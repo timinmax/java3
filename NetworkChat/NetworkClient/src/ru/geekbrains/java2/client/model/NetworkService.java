@@ -89,6 +89,14 @@ public class NetworkService {
         out.writeUTF(String.format("/chnick %s",newNickname));
     }
 
+    public void sendAddWordToFilterMessage(String wordToAdd) throws IOException {
+        out.writeUTF(String.format("/osadd %s",wordToAdd));
+    }
+
+    public void sendRemoveWordFromFilterMessage(String wordToRemove) throws IOException {
+        out.writeUTF(String.format("/osrem %s",wordToRemove));
+    }
+
     public void sendMessage(String message) throws IOException {
         out.writeUTF(message);
     }

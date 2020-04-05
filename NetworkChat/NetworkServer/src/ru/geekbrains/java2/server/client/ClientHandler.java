@@ -16,6 +16,8 @@ public class ClientHandler {
     private DataInputStream in;
     private DataOutputStream out;
 
+    private ObscenitiesFilter obsFilter;
+
     public String getNickname() {
         return nickname;
     }
@@ -25,10 +27,15 @@ public class ClientHandler {
     public ClientHandler(NetworkServer networkServer, Socket socket) {
         this.networkServer = networkServer;
         this.clientSocket = socket;
+        this.obsFilter = new ObscenitiesFilter("common");
     }
 
     public void run() {
         doHandle(clientSocket);
+    }
+
+    public ObscenitiesFilter getObsFilter() {
+        return obsFilter;
     }
 
     private void doHandle(Socket socket) {
@@ -80,6 +87,12 @@ public class ClientHandler {
                 }
             }else if(message.startsWith("/ulist")){
                 networkServer.sendUserList(this);
+            }else if(message.startsWith("/osadd")){
+                String[] messageParts = message.split("\\s+", 2);
+                obsFilter.addToFilter(messageParts[1]);
+            }else if(message.startsWith("/osrem")){
+                String[] messageParts = message.split("\\s+", 2);
+                obsFilter.removeFromFilter(messageParts[1]);
             }else if(message.startsWith("/chnick")){
                 String[] messageParts = message.split("\\s+", 2);
                 String newNickname = messageParts[1];
@@ -116,6 +129,7 @@ public class ClientHandler {
                     networkServer.broadcastMessage(nickname + " зашел в чат!", this);
                     sendMessage("/auth " + nickname);
                     networkServer.subscribe(this);
+                    this.obsFilter = new ObscenitiesFilter(nickname);
                     break;
                 }
             }
