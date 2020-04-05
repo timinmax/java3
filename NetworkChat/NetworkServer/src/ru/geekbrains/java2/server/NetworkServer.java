@@ -29,9 +29,6 @@ public class NetworkServer {
         this.authService = new BaseAuthService();
         this.thCheckAuthTimeout = new Thread(() -> this.checkAuthTimeout());
         this.thCheckAuthTimeout.setDaemon(true);
-
-
-
     }
 
     private static void connect2DB(){
@@ -156,7 +153,7 @@ public class NetworkServer {
 
 
     public String getUlist() throws SQLException {
-        String ulist = "@@@All/on";
+        String ulist = "@@@ALL/on";
         Connection conn = NetworkServer.getDbConnection();
         PreparedStatement stmt = conn.prepareStatement("SELECT DISTINCT nickname FROM users");
         ResultSet rs = stmt.executeQuery();

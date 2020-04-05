@@ -6,19 +6,20 @@ import ru.geekbrains.java2.client.model.NetworkService;
 
 import javax.swing.*;
 import java.io.IOException;
-import java.util.HashMap;
 
 public class ClientController {
 
     private final NetworkService networkService;
     private final AuthDialog authDialog;
     private final ClientChat clientChat;
+    private HistoryLogger chatLogger;
     private String nickname;
 
     public ClientController(String serverHost, int serverPort) {
         this.networkService = new NetworkService(serverHost, serverPort);
         this.authDialog = new AuthDialog(this);
         this.clientChat = new ClientChat(this);
+
     }
 
     public void runApplication() throws IOException {
@@ -29,6 +30,7 @@ public class ClientController {
     private void runAuthProcess() {
         networkService.setSuccessfulAuthEvent(nickname -> {
             setUserName(nickname);
+            this.chatLogger = new HistoryLogger(nickname);
             openChat();
         });
         authDialog.setVisible(true);
@@ -37,15 +39,32 @@ public class ClientController {
 
     private void openChat() {
         authDialog.dispose();
-        networkService.setMessageHandler(clientChat::appendMessage);
+        networkService.setMessageHandler(this::incomingMessage);
+        networkService.setGroupMessageHandler(this::incomingGroupMessage);
         networkService.setRefreshListHandler(clientChat::refreshContactList);
         networkService.setRefreshNicknameHandler(this::setUserName);
+        networkService.setSwitchNicknameHandler(this::switchNickname);
+
         clientChat.setVisible(true);
     }
 
     private void setUserName(String nickname) {
         this.nickname = nickname;
         clientChat.setTitle(nickname);
+    }
+
+    private void incomingMessage(String message){
+        chatLogger.appendMessage(message);
+        clientChat.showMessages();
+    }
+    private void incomingGroupMessage(String group,String message){
+        chatLogger.appendMessage(group,message);
+        clientChat.showMessages();
+    }
+
+    private void switchNickname(String oldNickname,String newNickname){
+        chatLogger.changeName(oldNickname,newNickname);
+
     }
 
     private void connectToServer() throws IOException {
@@ -65,16 +84,22 @@ public class ClientController {
         networkService.sendChangeNicknameMessage(newNickName);
     }
 
-    public void sendMessage(String message) {
+    public void sendMessage(String reciever, String message) {
+        chatLogger.appendMessage(reciever,nickname + ": " + message);
         try {
-            networkService.sendMessage(message);
+            networkService.sendMessage("/w " + reciever + " "  + message);
         } catch (IOException e) {
             JOptionPane.showMessageDialog(null, "Failed to send message!");
             e.printStackTrace();
         }
     }
 
+    public HistoryLogger getChatLogger() {
+        return chatLogger;
+    }
+
     public void shutdown() {
+        chatLogger.saveChatLog();
         networkService.close();
     }
 

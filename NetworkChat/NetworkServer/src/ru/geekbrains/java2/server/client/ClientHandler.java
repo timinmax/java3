@@ -73,7 +73,11 @@ public class ClientHandler {
                 String[] messageParts = message.split("\\s+", 3);
                 String recieverNickname = messageParts[1];
                 String messageText = nickname + ": " + messageParts[2];
-                networkServer.personalMessage(recieverNickname, messageText);
+                if ("ALL".equals(recieverNickname.trim().toUpperCase())){
+                    networkServer.broadcastMessage("/ALL " + messageText, this);
+                }else{
+                    networkServer.personalMessage(recieverNickname, messageText);
+                }
             }else if(message.startsWith("/ulist")){
                 networkServer.sendUserList(this);
             }else if(message.startsWith("/chnick")){
@@ -82,6 +86,7 @@ public class ClientHandler {
                 if (networkServer.changeNickName(nickname,newNickname)){
 
                     networkServer.broadcastMessage(nickname + " переименовался в " + newNickname, this);
+                    networkServer.broadcastMessage("/switchnick " + nickname + " " + newNickname, this);
                     this.nickname = newNickname;
                     sendMessage("/newnick " + this.nickname);
                     networkServer.sendUserList(null);

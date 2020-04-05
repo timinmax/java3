@@ -3,8 +3,7 @@ package ru.geekbrains.java2.client.view;
 import ru.geekbrains.java2.client.controller.ClientController;
 
 import javax.swing.*;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
+import java.awt.event.*;
 import java.io.IOException;
 import java.util.HashMap;
 
@@ -41,6 +40,40 @@ public class ClientChat extends JFrame {
         sendButton.addActionListener(e -> ClientChat.this.sendMessage());
         changeLoginButton.addActionListener(e -> ClientChat.this.changeLogin());
         messageTextField.addActionListener(e -> sendMessage());
+        usersList.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+                    showMessages();
+                }
+            }
+        });
+        usersList.addMouseListener(
+                   new MouseAdapter() {
+                       @Override
+                       public void mouseClicked(MouseEvent e) {
+                           showMessages();
+                       }
+                   });
+    }
+
+    public void showMessages(){
+        SwingUtilities.invokeLater(() -> {
+            chatText.setText(controller.getChatLogger().getLog(getSelectedUser()));
+        });
+
+
+    }
+
+    private String getSelectedUser(){
+        String selected = usersList.getSelectedValue();
+        if(selected==null){
+            usersList.setSelectedIndex(0);
+            selected = "ALL";
+        }
+        selected = selected.replaceAll("\\<.+?\\>","");
+
+        return selected;
     }
 
     private void sendMessage() {
@@ -48,22 +81,14 @@ public class ClientChat extends JFrame {
         if (message.isEmpty()) {
             return;
         }
-        String selected = usersList.getSelectedValue();
-        if(selected==null){
-            usersList.setSelectedIndex(0);
-            selected = "All";
-        }
-        selected = selected.replaceAll("\\<.+?\\>","");
-
-        appendOwnMessage(message);
-        controller.sendMessage((("All".equals(selected))?"":"/w " + selected + " " ) + message);
+        String selected = getSelectedUser();
+        controller.sendMessage(selected,message);
         messageTextField.setText(null);
+        showMessages();
     }
 
     private void changeLogin(){
-        System.out.println("Change it!");
-//        JOptionPane.showOptionDialog(mainPanel,"new nickname","new nickname",JOptionPane.OK_CANCEL_OPTION,JOptionPane.QUESTION_MESSAGE,null,null,null);
-        while (true){
+         while (true){
             String newNickName = JOptionPane.showInputDialog(mainPanel,"new nickname");
             if (newNickName == null){
                 break;
@@ -81,13 +106,6 @@ public class ClientChat extends JFrame {
         }
     }
 
-    public void appendMessage(String message) {
-        SwingUtilities.invokeLater(() -> {
-            chatText.append(message);
-            chatText.append(System.lineSeparator());
-        });
-    }
-
     public void refreshContactList(HashMap<String,Boolean> userStatusList){
         SwingUtilities.invokeLater(() -> {
             userListModel.clear();
@@ -97,9 +115,7 @@ public class ClientChat extends JFrame {
         });
     }
 
-    private void appendOwnMessage(String message) {
-        appendMessage("Я: " + message);
-    }
+
 
 
 }

@@ -1,12 +1,15 @@
 package ru.geekbrains.java2.client.model;
 
+
 import ru.geekbrains.java2.client.controller.AuthEvent;
+
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.HashMap;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 public class NetworkService {
@@ -19,11 +22,10 @@ public class NetworkService {
 
     private Consumer<String> messageHandler;
     private Consumer<HashMap> refreshListHandler;
-
-
-
     private Consumer<String> refreshNicknameHandler;
-    private AuthEvent successfulAuthEvent;
+    private BiConsumer<String,String> groupMessageHandler;
+    private BiConsumer<String,String> switchNicknameHandler;
+     private AuthEvent successfulAuthEvent;
     private String nickname;
 
     public NetworkService(String host, int port) {
@@ -35,6 +37,7 @@ public class NetworkService {
         socket = new Socket(host, port);
         in = new DataInputStream(socket.getInputStream());
         out = new DataOutputStream(socket.getOutputStream());
+
         runReadThread();
     }
 
@@ -61,6 +64,11 @@ public class NetworkService {
                         String[] messageParts = message.split("\\s+", 2);
                         nickname = messageParts[1];
                         refreshNicknameHandler.accept(nickname);
+                    }else if(message.startsWith("/switchnick")){
+                        String[] messageParts = message.split("\\s+", 3);
+                        switchNicknameHandler.accept(messageParts[1], messageParts[2]);
+                    }else if (message.startsWith("/ALL")){
+                        groupMessageHandler.accept("ALL", message.replaceFirst("/ALL",""));
                     }
                     else if (messageHandler != null) {
                         messageHandler.accept(message);
@@ -88,7 +96,12 @@ public class NetworkService {
     public void setMessageHandler(Consumer<String> messageHandler) {
         this.messageHandler = messageHandler;
     }
-
+    public void setSwitchNicknameHandler(BiConsumer<String, String> switchNicknameHandler) {
+        this.switchNicknameHandler = switchNicknameHandler;
+    }
+    public void setGroupMessageHandler(BiConsumer<String, String> groupMessageHandler) {
+        this.groupMessageHandler = groupMessageHandler;
+    }
     public void setRefreshListHandler(Consumer<HashMap> refreshListHandler) {
         this.refreshListHandler = refreshListHandler;
     }
