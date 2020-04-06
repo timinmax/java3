@@ -3,8 +3,7 @@ package ru.geekbrains.java2.client.view;
 import ru.geekbrains.java2.client.controller.ClientController;
 
 import javax.swing.*;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
+import java.awt.event.*;
 import java.io.IOException;
 import java.util.HashMap;
 
@@ -16,6 +15,8 @@ public class ClientChat extends JFrame {
     private JButton sendButton;
     private JTextArea chatText;
     private JButton changeLoginButton;
+    private JButton addFilterButton;
+    private JButton removeFilterButton;
     private DefaultListModel<String> userListModel = new DefaultListModel<>();
 
     private ClientController controller;
@@ -40,7 +41,43 @@ public class ClientChat extends JFrame {
        private void addListeners() {
         sendButton.addActionListener(e -> ClientChat.this.sendMessage());
         changeLoginButton.addActionListener(e -> ClientChat.this.changeLogin());
+        addFilterButton.addActionListener(e -> ClientChat.this.addFilter());
+        removeFilterButton.addActionListener(e -> ClientChat.this.removeFilter());
         messageTextField.addActionListener(e -> sendMessage());
+        usersList.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+                    showMessages();
+                }
+            }
+        });
+        usersList.addMouseListener(
+                   new MouseAdapter() {
+                       @Override
+                       public void mouseClicked(MouseEvent e) {
+                           showMessages();
+                       }
+                   });
+    }
+
+    public void showMessages(){
+        SwingUtilities.invokeLater(() -> {
+            chatText.setText(controller.getChatLogger().getLog(getSelectedUser()));
+        });
+
+
+    }
+
+    private String getSelectedUser(){
+        String selected = usersList.getSelectedValue();
+        if(selected==null){
+            usersList.setSelectedIndex(0);
+            selected = "ALL";
+        }
+        selected = selected.replaceAll("\\<.+?\\>","");
+
+        return selected;
     }
 
     private void sendMessage() {
@@ -48,22 +85,52 @@ public class ClientChat extends JFrame {
         if (message.isEmpty()) {
             return;
         }
-        String selected = usersList.getSelectedValue();
-        if(selected==null){
-            usersList.setSelectedIndex(0);
-            selected = "All";
-        }
-        selected = selected.replaceAll("\\<.+?\\>","");
-
-        appendOwnMessage(message);
-        controller.sendMessage((("All".equals(selected))?"":"/w " + selected + " " ) + message);
+        String selected = getSelectedUser();
+        controller.sendMessage(selected,message);
         messageTextField.setText(null);
+        showMessages();
+    }
+
+    private void addFilter(){
+        while (true){
+            String wordToAdd = JOptionPane.showInputDialog(mainPanel,"Add word to filter");
+            if (wordToAdd == null){
+                break;
+            }
+
+            if (!"".equals(wordToAdd.trim())){
+                try {
+                    controller.sendAddWordToFilter(wordToAdd.trim());
+                } catch (IOException e) {
+                    JOptionPane.showMessageDialog(mainPanel, "Ошибка при попытке добавить слово в матофильтр");
+                }finally {
+                    break;
+                }
+            }
+        }
+    }
+
+    private void removeFilter(){
+        while (true){
+            String wordToRemove = JOptionPane.showInputDialog(mainPanel,"Remove word from filter");
+            if (wordToRemove == null){
+                break;
+            }
+
+            if (!"".equals(wordToRemove.trim())){
+                try {
+                    controller.removeWordFromFilter(wordToRemove.trim());
+                } catch (IOException e) {
+                    JOptionPane.showMessageDialog(mainPanel, "Ошибка при попытке удалить слово из матофильтра");
+                }finally {
+                    break;
+                }
+            }
+        }
     }
 
     private void changeLogin(){
-        System.out.println("Change it!");
-//        JOptionPane.showOptionDialog(mainPanel,"new nickname","new nickname",JOptionPane.OK_CANCEL_OPTION,JOptionPane.QUESTION_MESSAGE,null,null,null);
-        while (true){
+         while (true){
             String newNickName = JOptionPane.showInputDialog(mainPanel,"new nickname");
             if (newNickName == null){
                 break;
@@ -81,13 +148,6 @@ public class ClientChat extends JFrame {
         }
     }
 
-    public void appendMessage(String message) {
-        SwingUtilities.invokeLater(() -> {
-            chatText.append(message);
-            chatText.append(System.lineSeparator());
-        });
-    }
-
     public void refreshContactList(HashMap<String,Boolean> userStatusList){
         SwingUtilities.invokeLater(() -> {
             userListModel.clear();
@@ -97,9 +157,7 @@ public class ClientChat extends JFrame {
         });
     }
 
-    private void appendOwnMessage(String message) {
-        appendMessage("Я: " + message);
-    }
+
 
 
 }

@@ -29,9 +29,6 @@ public class NetworkServer {
         this.authService = new BaseAuthService();
         this.thCheckAuthTimeout = new Thread(() -> this.checkAuthTimeout());
         this.thCheckAuthTimeout.setDaemon(true);
-
-
-
     }
 
     private static void connect2DB(){
@@ -109,14 +106,14 @@ public class NetworkServer {
     public synchronized void broadcastMessage(String message, ClientHandler owner) throws IOException {
         for (ClientHandler client : clients) {
             if (client != owner) {
-                client.sendMessage(message);
+                client.sendMessage(client.getObsFilter().applyFilter(message));
             }
         }
     }
     public void personalMessage(String recieverNickname, String messageText) throws IOException {
         for (ClientHandler client : clients) {
             if (client.getNickname().toLowerCase().trim().equals(recieverNickname.toLowerCase().trim())) {
-                client.sendMessage(messageText);
+                client.sendMessage(client.getObsFilter().applyFilter(messageText));
             }
         }
     }
@@ -156,7 +153,7 @@ public class NetworkServer {
 
 
     public String getUlist() throws SQLException {
-        String ulist = "@@@All/on";
+        String ulist = "@@@ALL/on";
         Connection conn = NetworkServer.getDbConnection();
         PreparedStatement stmt = conn.prepareStatement("SELECT DISTINCT nickname FROM users");
         ResultSet rs = stmt.executeQuery();
