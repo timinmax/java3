@@ -42,8 +42,7 @@ public class ClientHandler {
         try {
             in = new DataInputStream(socket.getInputStream());
             out = new DataOutputStream(socket.getOutputStream());
-
-            new Thread(() -> {
+            networkServer.getExecutorService().execute(() -> {
                 try {
                     authentication();
                     readMessages();
@@ -54,7 +53,7 @@ public class ClientHandler {
                 }finally {
                     closeConnection();
                 }
-            }).start();
+            });
 
         } catch (IOException e) {
             e.printStackTrace();
