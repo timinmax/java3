@@ -12,6 +12,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class NetworkServer {
 
@@ -21,14 +23,15 @@ public class NetworkServer {
     private static final int SECOND = 1000;
     private static final int LOGIN_TIMEOUT = 120;
     private final AuthService authService;
-    private Thread thCheckAuthTimeout;
+    //private Thread thCheckAuthTimeout;
     private static Connection dbConnection = null;
+    private final ExecutorService executorService = Executors.newCachedThreadPool();
 
     public NetworkServer(int port) {
         this.port = port;
         this.authService = new BaseAuthService();
-        this.thCheckAuthTimeout = new Thread(() -> this.checkAuthTimeout());
-        this.thCheckAuthTimeout.setDaemon(true);
+        /*this.thCheckAuthTimeout = new Thread(() -> this.checkAuthTimeout());
+        this.thCheckAuthTimeout.setDaemon(true);*/
     }
 
     private static void connect2DB(){
@@ -42,17 +45,13 @@ public class NetworkServer {
             }
         }
     }
-
-    public static Connection getDbConnection(){
-        connect2DB();
-        return dbConnection;
-    }
-
     public void start() {
         try (ServerSocket serverSocket = new ServerSocket(port)) {
             System.out.println("Сервер был успешно запущен на порту " + port);
             authService.start();
-            thCheckAuthTimeout.start();
+            //thCheckAuthTimeout.start();
+            executorService.execute(() -> checkAuthTimeout());
+
             while (true) {
                 System.out.println("Ожидание клиентского подключения...");
                 Socket clientSocket = serverSocket.accept();
@@ -69,6 +68,7 @@ public class NetworkServer {
             } catch (SQLException e) {
                 e.printStackTrace();
             }
+            executorService.shutdown();
         }
     }
 
@@ -76,6 +76,10 @@ public class NetworkServer {
         ClientHandler clientHandler = new ClientHandler(this, clientSocket);
         authTimeout.put(clientHandler,new Date().getTime());
         clientHandler.run();
+    }
+
+    public ExecutorService getExecutorService() {
+        return executorService;
     }
 
     private void checkAuthTimeout(){
@@ -97,6 +101,11 @@ public class NetworkServer {
             list2remove.stream().forEach(ClientHandler::closeConnection);
         }
 
+    }
+
+    public static Connection getDbConnection(){
+        connect2DB();
+        return dbConnection;
     }
 
     public AuthService getAuthService() {
