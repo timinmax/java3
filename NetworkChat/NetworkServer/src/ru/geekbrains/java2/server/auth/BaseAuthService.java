@@ -2,9 +2,13 @@ package ru.geekbrains.java2.server.auth;
 
 import ru.geekbrains.java2.server.NetworkServer;
 
+import java.io.FileInputStream;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.LogManager;
+import java.util.logging.Logger;
 
 
 public class BaseAuthService implements AuthService {
@@ -16,6 +20,16 @@ public class BaseAuthService implements AuthService {
         */
     }
     private static final List<UserData> USER_DATA = new ArrayList<UserData>();
+
+    private static Logger logger;
+    static {
+        try(FileInputStream ins = new FileInputStream("log.config")){
+            LogManager.getLogManager().readConfiguration(ins);
+            logger  = Logger.getLogger(NetworkServer.class.getName());
+        }catch (Exception ignore){
+            ignore.printStackTrace();
+        }
+    }
 
     private static class UserData {
         private String login;
@@ -58,11 +72,13 @@ public class BaseAuthService implements AuthService {
 
     @Override
     public void start() {
-        System.out.println("Сервис аутентификации запущен");
+        logger.log(Level.INFO,"Сервис аутентификации запущен");
+        //System.out.println("Сервис аутентификации запущен");
     }
 
     @Override
     public void stop() {
-        System.out.println("Сервис аутентификации оставлен");
+        logger.log(Level.INFO,"Сервис аутентификации оставлен");
+        //System.out.println("Сервис аутентификации оставлен");
     }
 }

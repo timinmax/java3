@@ -1,7 +1,12 @@
 package ru.geekbrains.java2.server.client;
 
+import ru.geekbrains.java2.server.NetworkServer;
+
 import java.io.*;
 import java.util.ArrayList;
+import java.util.logging.Level;
+import java.util.logging.LogManager;
+import java.util.logging.Logger;
 
 
 public class ObscenitiesFilter {
@@ -9,6 +14,16 @@ public class ObscenitiesFilter {
 
     private ArrayList<String> obscenitiesList;
     private final String OBS_PATH;
+    private static Logger logger;
+    static {
+        try(FileInputStream ins = new FileInputStream("log.config")){
+            LogManager.getLogManager().readConfiguration(ins);
+            logger  = Logger.getLogger(NetworkServer.class.getName());
+        }catch (Exception ignore){
+            ignore.printStackTrace();
+        }
+    }
+
 
     public ObscenitiesFilter(String nickName) {
         this.OBS_PATH = nickName + "_obs.dat";
@@ -49,14 +64,17 @@ public class ObscenitiesFilter {
             ObjectInputStream ois = new ObjectInputStream(fis))
         {
             this.obscenitiesList = (ArrayList<String>) ois.readObject();
-            System.out.println("Log has been restored");
+            //System.out.println("Log has been restored");
+            logger.log(Level.INFO,"Log has been restored");
         }catch(IOException ioe)
         {
-            System.out.println("Log restore error, got new one");
+            logger.log(Level.SEVERE,"Log restore error, got new one", ioe);
+            //System.out.println("Log restore error, got new one");
             this.obscenitiesList = new ArrayList<>();
         }catch(ClassNotFoundException c)
         {
-            System.out.println("Log restore error, got new one");
+            logger.log(Level.SEVERE,"Log restore error, got new one", c);
+            //System.out.println("Log restore error, got new one");
             this.obscenitiesList = new ArrayList<>();
         }
     }
@@ -68,7 +86,8 @@ public class ObscenitiesFilter {
             oos.writeObject(obscenitiesList);
         }catch(IOException ioe)
         {
-            ioe.printStackTrace();
+            logger.log(Level.SEVERE,"Save obscenities array error", ioe);
+            //ioe.printStackTrace();
         }
     }
 }
