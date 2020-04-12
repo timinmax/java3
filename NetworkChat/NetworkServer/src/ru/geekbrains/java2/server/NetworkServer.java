@@ -4,6 +4,7 @@ import ru.geekbrains.java2.server.auth.AuthService;
 import ru.geekbrains.java2.server.auth.BaseAuthService;
 import ru.geekbrains.java2.server.client.ClientHandler;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -14,6 +15,9 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.logging.Level;
+import java.util.logging.LogManager;
+import java.util.logging.Logger;
 
 public class NetworkServer {
 
@@ -26,6 +30,15 @@ public class NetworkServer {
     //private Thread thCheckAuthTimeout;
     private static Connection dbConnection = null;
     private final ExecutorService executorService = Executors.newCachedThreadPool();
+    private static Logger logger;
+    static {
+        try(FileInputStream ins = new FileInputStream("log.config")){
+            LogManager.getLogManager().readConfiguration(ins);
+            logger  = Logger.getLogger(NetworkServer.class.getName());
+        }catch (Exception ignore){
+            ignore.printStackTrace();
+        }
+    }
 
     public NetworkServer(int port) {
         this.port = port;
@@ -39,28 +52,32 @@ public class NetworkServer {
             try {
                 dbConnection = MySqlConEx.getMySQLConnection();//MySqlConEx.getMySQLConnection;
             } catch (SQLException e) {
-                e.printStackTrace();
+                logger.log(Level.SEVERE, "Ошибка SQL запроса", e);
             } catch (ClassNotFoundException e) {
-                e.printStackTrace();
+                logger.log(Level.SEVERE, "Ошибка подключения к СУБД", e);
             }
         }
     }
     public void start() {
         try (ServerSocket serverSocket = new ServerSocket(port)) {
-            System.out.println("Сервер был успешно запущен на порту " + port);
+            //System.out.println("Сервер был успешно запущен на порту " + port);
+            logger.log(Level.INFO, "Сервер был успешно запущен на порту " + port);
             authService.start();
             //thCheckAuthTimeout.start();
             executorService.execute(() -> checkAuthTimeout());
 
             while (true) {
-                System.out.println("Ожидание клиентского подключения...");
+                //System.out.println("Ожидание клиентского подключения...");
+                logger.log(Level.INFO, "Ожидание клиентского подключения...");
                 Socket clientSocket = serverSocket.accept();
-                System.out.println("Клиент подлючился");
+                //System.out.println("Клиент подлючился");
+                logger.log(Level.INFO, "Клиент подлючился");
                 createClientHandler(clientSocket);
             }
         } catch (IOException e) {
-            System.out.println("Ошибка при работе сервера");
-            e.printStackTrace();
+            logger.log(Level.SEVERE, "Ошибка при работе сервера", e);
+            //System.out.println("Ошибка при работе сервера");
+            //e.printStackTrace();
         } finally {
             authService.stop();
             try {
@@ -83,7 +100,8 @@ public class NetworkServer {
     }
 
     private void checkAuthTimeout(){
-        System.out.println("Запущена проверка тайм-аута.");
+        //System.out.println("Запущена проверка тайм-аута.");
+        logger.log(Level.INFO, "Запущена проверка тайм-аута.");
         while (true) {
             try {
                 Thread.sleep(1000);//оптимизация использования ресурсов
@@ -142,9 +160,11 @@ public class NetworkServer {
         try {
             sendUserList(null);
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.log(Level.SEVERE, "Ошибка при подключении клиента.", e);
+            //e.printStackTrace();
         } catch (SQLException e) {
-            e.printStackTrace();
+            logger.log(Level.SEVERE, "Ошибка SQL запроса при подключении клиента", e);
+            //e.printStackTrace();
         }
     }
 
@@ -154,9 +174,10 @@ public class NetworkServer {
         try {
             sendUserList(null);
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.log(Level.SEVERE, "Ошибка при отключении клиента", e);
+            //e.printStackTrace();
         } catch (SQLException e) {
-            e.printStackTrace();
+            logger.log(Level.SEVERE, "Ошибка SQL запроса при отключении клиента", e);
         }
     }
 

@@ -4,9 +4,14 @@ import ru.geekbrains.java2.server.NetworkServer;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.sql.SQLException;
+import java.util.logging.Level;
+import java.util.logging.LogManager;
+import java.util.logging.Logger;
+
 
 public class ClientHandler {
 
@@ -17,6 +22,17 @@ public class ClientHandler {
     private DataOutputStream out;
 
     private ObscenitiesFilter obsFilter;
+
+    private static Logger logger;
+    static {
+        try(FileInputStream ins = new FileInputStream("log.config")){
+            LogManager.getLogManager().readConfiguration(ins);
+            logger  = Logger.getLogger(NetworkServer.class.getName());
+        }catch (Exception ignore){
+            ignore.printStackTrace();
+        }
+    }
+
 
     public String getNickname() {
         return nickname;
@@ -47,16 +63,19 @@ public class ClientHandler {
                     authentication();
                     readMessages();
                 } catch (IOException e) {
-                    System.out.println("Соединение с клиентом " + nickname + " было закрыто!");
+                    logger.log(Level.SEVERE, "Соединение с клиентом " + nickname + " было закрыто!", e);
+                    //System.out.println("Соединение с клиентом " + nickname + " было закрыто!");
                 } catch (SQLException e){
-                    e.printStackTrace();
+                    logger.log(Level.SEVERE, "Ошибка SQL запроса", e);
+                    //e.printStackTrace();
                 }finally {
                     closeConnection();
                 }
             });
 
         } catch (IOException e) {
-            e.printStackTrace();
+            //e.printStackTrace();
+            logger.log(Level.SEVERE, "Client handler exception", e);
         }
     }
 
@@ -65,14 +84,15 @@ public class ClientHandler {
         try {
             clientSocket.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.log(Level.SEVERE, "Close client exception", e);
+            //e.printStackTrace();
         }
     }
 
     private void readMessages() throws IOException, SQLException {
         while (true) {
             String message = in.readUTF().toLowerCase();
-            System.out.printf("От %s: %s%n", nickname, message);
+           // System.out.printf("От %s: %s%n", nickname, message);
             if ("/end".equals(message)) {
                 return;
             }else if (message.startsWith("/w")) {
