@@ -1,5 +1,8 @@
+import testSuite.Tester;
+
 public class HW07 {
     public static void main(String[] args) {
-        System.out.println("init");
+        Tester.start(class2test.class);
+        Tester.start(wrongClass2test.class.getName());
     }
 }
